@@ -22,8 +22,7 @@ class tuned (
 ) inherits ::tuned::params {
 
   # Support old facter versions without 'osfamily'
-  if ( $::operatingsystem == 'Fedora' ) or
-    ( $::operatingsystem =~ /^(RedHat|CentOS|Scientific|OracleLinux|CloudLinux)$/ and versioncmp($::operatingsystemrelease, '6') >= 0 ) {
+    if ( $facts['operatingsystem'] =~ /^(RedHat|CentOS|Scientific|OracleLinux|CloudLinux)$/ and versioncmp($facts['operatingsystemrelease'], '7') >= 0 ) {
 
     # One package
     package { 'tuned': ensure => $ensure }
@@ -33,7 +32,7 @@ class tuned (
 
       # Ensure tuned is started before some DBMS, for when it's used to disable
       # transparent hugepages
-      if $::service_provider == 'systemd' {
+      if $facts['service_provider'] == 'systemd' {
         file { '/etc/systemd/system/tuned.service.d':
           ensure => 'directory',
           owner  => 'root',
@@ -48,7 +47,7 @@ class tuned (
         }
         ~> exec { 'tuned systemctl daemon-reload':
           command     => 'systemctl daemon-reload',
-          path        => $::path,
+          path        => $facts['path'],
           refreshonly => true,
           before      => Service['tuned'],
         }
@@ -92,7 +91,7 @@ class tuned (
   } else {
 
     # Report to both the agent and the master that we don't do anything
-    $message = "${::operatingsystem} ${::operatingsystemrelease} not supported by the tuned module"
+    $message = "${facts['operatingsystem']} ${facts['operatingsystemrelease']} not supported by the tuned module"
     notice($message)
     notify { $message: withpath => true }
 
